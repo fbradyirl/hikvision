@@ -87,7 +87,7 @@ class CameraClient(object):
 
         except ReConnError as conn_err:
             # _LOGGING.exception("Unable to connect to %s", host)
-            raise hikvisionError('Connection to hikvision failed.', conn_err)
+            raise HikvisionError('Connection to hikvision failed.', conn_err)
 
 
     def get_firmware_version(self):

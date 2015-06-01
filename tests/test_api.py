@@ -9,16 +9,16 @@ Licensed under the MIT license.
 """
 # pylint: disable=protected-access
 import unittest
-import openwebif.api
-from openwebif.error import OpenWebIfError, MissingParamError
+import hikvision.api
+from hikvision.error import HikvisionError, MissingParamError
 from requests.exceptions import ConnectionError
 
 class TestAPI(unittest.TestCase):
-    """ Tests openwebif.api module. """
+    """ Tests hikvision.api module. """
 
     def test_create(self):
         """ Test creating a new device. """
         # Bogus config
-        self.assertRaises(MissingParamError, lambda: openwebif.api.Client())
-        self.assertRaises(OpenWebIfError, lambda: openwebif.api.Client('10.10.10.4'))
+        self.assertRaises(MissingParamError, lambda: hikvision.api.CameraClient())
+        self.assertRaises(HikvisionError, lambda: hikvision.api.CameraClient('10.10.10.4'))
 
