@@ -19,6 +19,6 @@ class TestAPI(unittest.TestCase):
     def test_create(self):
         """ Test creating a new device. """
         # Bogus config
-        self.assertRaises(MissingParamError, lambda: hikvision.api.CameraClient())
-        self.assertRaises(HikvisionError, lambda: hikvision.api.CameraClient('10.10.10.4'))
+        self.assertRaises(MissingParamError, lambda: hikvision.api.CreateDevice())
+        self.assertRaises(HikvisionError, lambda: hikvision.api.CreateDevice('10.10.10.4'))
 

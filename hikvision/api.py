@@ -61,10 +61,10 @@ def remove_namespace(response):
     return re.sub(' xmlns="[^"]+"', '', response, count=1)
 
 
-class CameraClient(object):
+class CreateDevice(object):
 
     """
-    CameraClient is the class handling the hikvision interactions.
+    Creates a new camera api device
     """
 
     def __init__(self, host=None, port=DEFAULT_PORT,
