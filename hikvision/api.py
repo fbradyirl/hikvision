@@ -50,6 +50,11 @@ def log_response_errors(response):
     if response.error:
         _LOGGING.error("error %s", response.error)
 
+def enable_logging():
+    """ Setup the logging for home assistant. """
+    logging.basicConfig(level=logging.INFO)
+
+
 def remove_namespace(response):
     return re.sub(' xmlns="[^"]+"', '', response, count=1)
 
@@ -61,6 +66,7 @@ class CameraClient(object):
 
     def __init__(self, host=None, port=None,
                  username=None, password=None, is_https=True):
+        enable_logging()
         _LOGGING.info("Initialising new hikvision camera client")
 
         if not host:

@@ -1,3 +1,5 @@
+# Hikvision [![Build Status](https://travis-ci.org/fbradyirl/hikvision.svg?branch=master)](https://travis-ci.org/fbradyirl/hikvision) [![Coverage Status](https://img.shields.io/coveralls/fbradyirl/hikvision.svg)](https://coveralls.io/r/fbradyirl/hikvision?branch=master)
+
 Introduction
 ============
 This is a python module providing a basic python 
