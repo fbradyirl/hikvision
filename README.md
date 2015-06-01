@@ -41,7 +41,7 @@ Variables:
 ```python
 import hikvision.api
 
-hik_camera = hikvision.api.Client('192.168.2.5', username='admin', password='12345')
+hik_camera = hikvision.api.CreateDevice('192.168.2.5', username='admin', password='12345')
 hik_camera.enable_motion_detection()
 hik_camera.disable_motion_detection()
 hik_camera.is_motion_detection_enabled()
