@@ -20,15 +20,15 @@ http://bit.ly/1RuyUuF
 Requirements
 ------------
 
-openwebif.py requires:
+module requires:
  * requests>=2.0
 
 
 Install
 -------
 ```python
-git clone --recursive https://github.com/fbradyirl/openwebif.py.git
-cd openwebif
+git clone --recursive git@github.com:fbradyirl/hikvision.git
+cd hikvision
 # NOTE: You might need administrator privileges to install python modules.
 pip install -r requirements.txt
 pip install -e .
@@ -70,11 +70,11 @@ Developer
 
 hikvision is hosted by Github at https://github.com/fbradyirl/hikvision
 
-Code has been tested with the following before commit:
+CI run after commit:
 
 ```python
-flake8 openwebif
-pylint openwebif
+flake8 hikvision
+pylint hikvision
 coverage run -m unittest discover tests
 ```
 
