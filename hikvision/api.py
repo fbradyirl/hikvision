@@ -50,13 +50,16 @@ def log_response_errors(response):
     if response.error:
         _LOGGING.error("error %s", response.error)
 
+
 def enable_logging():
     """ Setup the logging for home assistant. """
     logging.basicConfig(level=logging.INFO)
 
 
 def remove_namespace(response):
+    """ Removes namespace element from xml"""
     return re.sub(' xmlns="[^"]+"', '', response, count=1)
+
 
 class CameraClient(object):
 
@@ -64,7 +67,7 @@ class CameraClient(object):
     CameraClient is the class handling the hikvision interactions.
     """
 
-    def __init__(self, host=None, port=None,
+    def __init__(self, host=None, port=DEFAULT_PORT,
                  username=None, password=None, is_https=True):
         enable_logging()
         _LOGGING.info("Initialising new hikvision camera client")
@@ -89,7 +92,6 @@ class CameraClient(object):
             # _LOGGING.exception("Unable to connect to %s", host)
             raise HikvisionError('Connection to hikvision failed.', conn_err)
 
-
     def get_firmware_version(self):
         """
         Returns the firmware version running on the camera
@@ -98,7 +100,7 @@ class CameraClient(object):
 
     def get_about(self, element_to_query=None, timeout=None):
         """
-        Returns ElementTree containing the result of 
+        Returns ElementTree containing the result of
         <host>/System/deviceInfo
         or if element_to_query is not None, the value of that element
         """
@@ -108,11 +110,10 @@ class CameraClient(object):
 
         if timeout is not None:
             response = requests.get(url, auth=HTTPBasicAuth(
-                self._username, self._password), 
-                verify=False, timeout=timeout)
+                self._username, self._password), verify=False, timeout=timeout)
         else:
-            response = requests.get(url, auth=HTTPBasicAuth(
-                self._username, self._password), 
+            response = requests.get(
+                url, auth=HTTPBasicAuth(self._username, self._password),
                 verify=False)
 
         _LOGGING.info('response: %s', response)
@@ -126,9 +127,9 @@ class CameraClient(object):
             return response.content
         else:
             try:
-                tree = ElementTree.fromstring(remove_namespace(response.content))
+                tree = ElementTree.fromstring(
+                    remove_namespace(response.content))
                 result = tree.findall('%s' % (element_to_query))
-                
                 if len(result) > 0:
                     _LOGGING.info('element_to_query: %s result: %s',
                                   element_to_query, result[0])
