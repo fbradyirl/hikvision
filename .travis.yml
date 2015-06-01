@@ -5,8 +5,8 @@ install:
   - pip install -r requirements.txt
   - pip install flake8 pylint coveralls
 script:
-  - flake8 openwebif
-  - pylint openwebif
+  - flake8 hikvision
+  - pylint hikvision
   - coverage run -m unittest discover tests
 after_success:
   - coveralls
