@@ -39,6 +39,7 @@ Variables:
 ```python
 import hikvision.api
 
+# This will use http by default (not https)
 hik_camera = hikvision.api.CreateDevice('192.168.2.5', username='admin', password='12345')
 hik_camera.enable_motion_detection()
 hik_camera.disable_motion_detection()

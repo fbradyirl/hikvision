@@ -65,7 +65,7 @@ class CreateDevice(object):
     """
 
     def __init__(self, host=None, port=DEFAULT_PORT,
-                 username=None, password=None, is_https=True):
+                 username=None, password=None, is_https=False):
         enable_logging()
         _LOGGING.info("Initialising new hikvision camera client")
 
@@ -115,7 +115,7 @@ class CreateDevice(object):
 
         response = requests.get(
             url, auth=HTTPBasicAuth(self._username, self._password),
-            verify=False)
+            verify=True)
 
         _LOGGING.debug('response: %s', response)
         _LOGGING.debug("status_code %s", response.status_code)
@@ -154,7 +154,7 @@ class CreateDevice(object):
         """ Get current state of Motion Detection """
 
         response = requests.get(self.motion_url, auth=HTTPBasicAuth(
-            self._username, self._password), verify=False)
+            self._username, self._password), verify=True)
         _LOGGING.debug('Response: %s', response.text)
 
         if response.status_code != 200:
@@ -216,7 +216,7 @@ class CreateDevice(object):
         _LOGGING.debug("%s", xml)
 
         response = requests.put(self.motion_url, auth=HTTPBasicAuth(
-            self._username, self._password), verify=False, data=xml)
+            self._username, self._password), verify=True, data=xml)
         _LOGGING.debug('Response: %s', response.text)
 
         if response.status_code != 200:
