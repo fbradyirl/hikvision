@@ -17,7 +17,6 @@ from hikvision.constants import DEFAULT_PORT
 from requests.exceptions import ConnectionError as ReConnError
 from requests.auth import HTTPBasicAuth
 
-logging.basicConfig()
 _LOGGING = logging.getLogger(__name__)
 
 # pylint: disable=too-many-arguments
@@ -47,8 +46,6 @@ def log_response_errors(response):
     """
 
     _LOGGING.error("status_code %s", response.status_code)
-    if response.error:
-        _LOGGING.error("error %s", response.error)
 
 
 def enable_logging():
@@ -78,27 +75,35 @@ class CreateDevice(object):
 
         self._username = username
         self._password = password
+        self.xml_motion_detection_off = None
+        self.xml_motion_detection_on = None
 
         # Now build base url
         self._base = build_url_base(host, port, is_https)
 
+        # need to support different channel
+        self.motion_url = '%s/MotionDetection/1/' % self._base
+        _LOGGING.info('motion_url: %s', self.motion_url)
+
         try:
             _LOGGING.info("Going to probe device to test connection")
-            version = self.get_firmware_version()
+            version = self.get_version()
+            enabled = self.is_motion_detection_enabled()
             _LOGGING.info("Connected OK!")
-            _LOGGING.info("hikvision version %s", version)
+            _LOGGING.info("Camera firmaward version: %s", version)
+            _LOGGING.info("Motion Detection enabled: %s", enabled)
 
         except ReConnError as conn_err:
             # _LOGGING.exception("Unable to connect to %s", host)
             raise HikvisionError('Connection to hikvision failed.', conn_err)
 
-    def get_firmware_version(self):
+    def get_version(self):
         """
         Returns the firmware version running on the camera
         """
         return self.get_about(element_to_query='firmwareVersion')
 
-    def get_about(self, element_to_query=None, timeout=None):
+    def get_about(self, element_to_query=None):
         """
         Returns ElementTree containing the result of
         <host>/System/deviceInfo
@@ -108,16 +113,12 @@ class CreateDevice(object):
         url = '%s/System/deviceInfo' % self._base
         _LOGGING.info('url: %s', url)
 
-        if timeout is not None:
-            response = requests.get(url, auth=HTTPBasicAuth(
-                self._username, self._password), verify=False, timeout=timeout)
-        else:
-            response = requests.get(
-                url, auth=HTTPBasicAuth(self._username, self._password),
-                verify=False)
+        response = requests.get(
+            url, auth=HTTPBasicAuth(self._username, self._password),
+            verify=False)
 
-        _LOGGING.info('response: %s', response)
-        _LOGGING.info("status_code %s", response.status_code)
+        _LOGGING.debug('response: %s', response)
+        _LOGGING.debug("status_code %s", response.status_code)
 
         if response.status_code != 200:
             log_response_errors(response)
@@ -131,8 +132,8 @@ class CreateDevice(object):
                     remove_namespace(response.content))
                 result = tree.findall('%s' % (element_to_query))
                 if len(result) > 0:
-                    _LOGGING.info('element_to_query: %s result: %s',
-                                  element_to_query, result[0])
+                    _LOGGING.debug('element_to_query: %s result: %s',
+                                   element_to_query, result[0])
 
                     return result[0].text.strip()
                 else:
@@ -148,3 +149,94 @@ class CreateDevice(object):
                     ' %s AttributeError: %s', element_to_query, attib_err)
                 return
         return
+
+    def is_motion_detection_enabled(self):
+        """ Get current state of Motion Detection """
+
+        response = requests.get(self.motion_url, auth=HTTPBasicAuth(
+            self._username, self._password), verify=False)
+        _LOGGING.debug('Response: %s', response.text)
+
+        if response.status_code != 200:
+            _LOGGING.error(
+                "There was an error connecting to %s", self.motion_url)
+            _LOGGING.error("status_code %s", response.status_code)
+            return
+
+        try:
+
+            tree = ElementTree.fromstring(
+                remove_namespace(response.content))
+            find_result = tree.findall('enabled')
+            if len(find_result) == 0:
+                _LOGGING.error("Problem getting motion detection status")
+                return
+
+            result = find_result[0].text.strip()
+            _LOGGING.info(
+                'Current motion detection state? enabled: %s', result)
+
+            if result == 'true':
+                # Save this for future switch off
+                self.xml_motion_detection_on = ElementTree.tostring(
+                    tree, encoding='utf8')
+                find_result[0].text = 'false'
+                self.xml_motion_detection_off = ElementTree.tostring(
+                    tree, encoding='utf8')
+                return True
+            else:
+                # Save this for future switch on
+                self.xml_motion_detection_off = ElementTree.tostring(
+                    tree, encoding='utf8')
+                find_result[0].text = 'true'
+                self.xml_motion_detection_on = ElementTree.tostring(
+                    tree, encoding='utf8')
+                return False
+
+        except AttributeError as attib_err:
+            _LOGGING.error(
+                'There was a problem parsing '
+                'camera motion detection state: %s', attib_err)
+            return
+
+    def enable_motion_detection(self):
+        """ Enable Motion Detection """
+
+        self.put_motion_detection_xml(self.xml_motion_detection_on)
+
+    def disable_motion_detection(self):
+        """ Disable Motion Detection """
+
+        self.put_motion_detection_xml(self.xml_motion_detection_off)
+
+    def put_motion_detection_xml(self, xml):
+        """ Put request with xml Motion Detection """
+
+        _LOGGING.debug('xml:')
+        _LOGGING.debug("%s", xml)
+
+        response = requests.put(self.motion_url, auth=HTTPBasicAuth(
+            self._username, self._password), verify=False, data=xml)
+        _LOGGING.debug('Response: %s', response.text)
+
+        if response.status_code != 200:
+            _LOGGING.error(
+                "There was an error connecting to %s", self.motion_url)
+            _LOGGING.error("status_code %s", response.status_code)
+            return
+
+        try:
+            tree = ElementTree.fromstring(
+                remove_namespace(response.content))
+            find_result = tree.findall('statusString')
+            if len(find_result) == 0:
+                _LOGGING.error("Problem getting motion detection status")
+                return
+
+            if find_result[0].text.strip() == 'OK':
+                _LOGGING.info('Updated successfully')
+
+        except AttributeError as attib_err:
+            _LOGGING.error(
+                'There was a problem parsing the response: %s', attib_err)
+            return
