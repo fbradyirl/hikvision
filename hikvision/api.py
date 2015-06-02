@@ -125,11 +125,11 @@ class CreateDevice(object):
             return None
 
         if element_to_query is None:
-            return response.content
+            return response.text
         else:
             try:
                 tree = ElementTree.fromstring(
-                    remove_namespace(response.content))
+                    remove_namespace(response.text))
                 result = tree.findall('%s' % (element_to_query))
                 if len(result) > 0:
                     _LOGGING.debug('element_to_query: %s result: %s',
@@ -140,10 +140,10 @@ class CreateDevice(object):
                     _LOGGING.error(
                         'There was a problem finding element: %s',
                         element_to_query)
-                    _LOGGING.error('Entire response: %s', response.content)
+                    _LOGGING.error('Entire response: %s', response.text)
 
             except AttributeError as attib_err:
-                _LOGGING.error('Entire response: %s', response.content)
+                _LOGGING.error('Entire response: %s', response.text)
                 _LOGGING.error(
                     'There was a problem finding element:'
                     ' %s AttributeError: %s', element_to_query, attib_err)
@@ -166,7 +166,7 @@ class CreateDevice(object):
         try:
 
             tree = ElementTree.fromstring(
-                remove_namespace(response.content))
+                remove_namespace(response.text))
             find_result = tree.findall('enabled')
             if len(find_result) == 0:
                 _LOGGING.error("Problem getting motion detection status")
@@ -227,7 +227,7 @@ class CreateDevice(object):
 
         try:
             tree = ElementTree.fromstring(
-                remove_namespace(response.content))
+                remove_namespace(response.text))
             find_result = tree.findall('statusString')
             if len(find_result) == 0:
                 _LOGGING.error("Problem getting motion detection status")
