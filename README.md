@@ -1,8 +1,6 @@
-# Hikvision [![Build Status](https://travis-ci.org/fbradyirl/hikvision.svg?branch=master)](https://travis-ci.org/fbradyirl/hikvision) [![Coverage Status](https://img.shields.io/coveralls/fbradyirl/hikvision.svg)](https://coveralls.io/r/fbradyirl/hikvision?branch=master)
+# Introduction [![Build Status](https://travis-ci.org/fbradyirl/hikvision.svg?branch=master)](https://travis-ci.org/fbradyirl/hikvision) [![Coverage Status](https://coveralls.io/repos/fbradyirl/hikvision/badge.svg?branch=master)](https://coveralls.io/r/fbradyirl/hikvision?branch=master)
 
-Introduction
-============
-This is a python module providing a basic python 
+This is a python module providing a basic python
 interface to interact with a Hikvision IP Camera
 
 This is licensed under the MIT license.
@@ -10,7 +8,7 @@ This is licensed under the MIT license.
 Getting started
 ===============
 
-This module is tested against firmware 5.2.0. 
+This module is tested against firmware 5.2.0.
 It may work on older versions, but that has not been tested.
 
 For further info on  the camera API's see:
