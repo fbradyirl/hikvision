@@ -8,12 +8,12 @@ from distutils.core import setup
 
 setup(
     name='hikvision',
-    version='0.1',
+    version='0.2',
     description='Provides a python interface to interact with a hikvision camera',
     author='Finbarr Brady',
     author_email='fbradyirl@users.noreply.github.com',
     url='https://github.com/fbradyirl/hikvision',
-    download_url = 'https://github.com/fbradyirl/hikvision/tarball/0.1',
+    download_url = 'https://github.com/fbradyirl/hikvision/tarball/0.2',
     keywords='hikvision camera python cgi interface',
     packages=['hikvision'],
     classifiers = [
