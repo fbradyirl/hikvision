@@ -50,7 +50,7 @@ def log_response_errors(response):
 
 def enable_logging():
     """ Setup the logging for home assistant. """
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
 
 def remove_namespace(response):
@@ -84,6 +84,12 @@ class CreateDevice(object):
         # need to support different channel
         self.motion_url = '%s/MotionDetection/1/' % self._base
         _LOGGING.info('motion_url: %s', self.motion_url)
+
+
+        self._xml_namespace = "http://www.hikvision.com/ver10/XMLSchema"
+        # Required to parse and change xml with the host camera
+        _LOGGING.info('ElementTree.register_namespace: %s', self._xml_namespace)
+        ElementTree.register_namespace("", self._xml_namespace)
 
         try:
             _LOGGING.info("Going to probe device to test connection")
@@ -128,9 +134,10 @@ class CreateDevice(object):
             return response.text
         else:
             try:
-                tree = ElementTree.fromstring(
-                    remove_namespace(response.text))
-                result = tree.findall('%s' % (element_to_query))
+                tree = ElementTree.fromstring(response.text)
+
+                element_to_query = './/{%s}%s' % (self._xml_namespace, element_to_query)
+                result = tree.findall(element_to_query)
                 if len(result) > 0:
                     _LOGGING.debug('element_to_query: %s result: %s',
                                    element_to_query, result[0])
@@ -165,9 +172,8 @@ class CreateDevice(object):
 
         try:
 
-            tree = ElementTree.fromstring(
-                remove_namespace(response.text))
-            find_result = tree.findall('enabled')
+            tree = ElementTree.fromstring(response.text)
+            find_result = tree.findall('.//{%s}enabled' % self._xml_namespace)
             if len(find_result) == 0:
                 _LOGGING.error("Problem getting motion detection status")
                 return
@@ -226,9 +232,8 @@ class CreateDevice(object):
             return
 
         try:
-            tree = ElementTree.fromstring(
-                remove_namespace(response.text))
-            find_result = tree.findall('statusString')
+            tree = ElementTree.fromstring(response.text)
+            find_result = tree.findall('.//{%s}statusString' % self._xml_namespace)
             if len(find_result) == 0:
                 _LOGGING.error("Problem getting motion detection status")
                 return
