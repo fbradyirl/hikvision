@@ -85,10 +85,10 @@ class CreateDevice(object):
         self.motion_url = '%s/MotionDetection/1/' % self._base
         _LOGGING.info('motion_url: %s', self.motion_url)
 
-
         self._xml_namespace = "http://www.hikvision.com/ver10/XMLSchema"
         # Required to parse and change xml with the host camera
-        _LOGGING.info('ElementTree.register_namespace: %s', self._xml_namespace)
+        _LOGGING.info(
+            'ElementTree.register_namespace: %s', self._xml_namespace)
         ElementTree.register_namespace("", self._xml_namespace)
 
         try:
@@ -136,7 +136,8 @@ class CreateDevice(object):
             try:
                 tree = ElementTree.fromstring(response.text)
 
-                element_to_query = './/{%s}%s' % (self._xml_namespace, element_to_query)
+                element_to_query = './/{%s}%s' % (
+                    self._xml_namespace, element_to_query)
                 result = tree.findall(element_to_query)
                 if len(result) > 0:
                     _LOGGING.debug('element_to_query: %s result: %s',
@@ -233,7 +234,8 @@ class CreateDevice(object):
 
         try:
             tree = ElementTree.fromstring(response.text)
-            find_result = tree.findall('.//{%s}statusString' % self._xml_namespace)
+            find_result = tree.findall(
+                './/{%s}statusString' % self._xml_namespace)
             if len(find_result) == 0:
                 _LOGGING.error("Problem getting motion detection status")
                 return
