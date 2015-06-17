@@ -13,13 +13,14 @@ import requests
 import re
 from xml.etree import ElementTree
 from hikvision.error import HikvisionError, MissingParamError
-from hikvision.constants import DEFAULT_PORT, XML_ENCODING
+from hikvision.constants import DEFAULT_PORT, DEFAULT_HEADERS
 from requests.exceptions import ConnectionError as ReConnError
 from requests.auth import HTTPBasicAuth
 
 _LOGGING = logging.getLogger(__name__)
 
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-instance-attributes
 
 
 def build_url_base(host, port, is_https):
@@ -74,6 +75,7 @@ class CreateDevice(object):
             raise MissingParamError('Connection to hikvision failed.', None)
 
         self._username = username
+        self._host = host
         self._password = password
         self.xml_motion_detection_off = None
         self.xml_motion_detection_on = None
@@ -82,7 +84,7 @@ class CreateDevice(object):
         self._base = build_url_base(host, port, is_https)
 
         # need to support different channel
-        self.motion_url = '%s/MotionDetection/1/' % self._base
+        self.motion_url = '%s/MotionDetection/1' % self._base
         _LOGGING.info('motion_url: %s', self.motion_url)
 
         self._xml_namespace = "http://www.hikvision.com/ver10/XMLSchema"
@@ -120,8 +122,7 @@ class CreateDevice(object):
         _LOGGING.info('url: %s', url)
 
         response = requests.get(
-            url, auth=HTTPBasicAuth(self._username, self._password),
-            verify=True)
+            url, auth=HTTPBasicAuth(self._username, self._password))
 
         _LOGGING.debug('response: %s', response)
         _LOGGING.debug("status_code %s", response.status_code)
@@ -162,7 +163,7 @@ class CreateDevice(object):
         """ Get current state of Motion Detection """
 
         response = requests.get(self.motion_url, auth=HTTPBasicAuth(
-            self._username, self._password), verify=True)
+            self._username, self._password))
         _LOGGING.debug('Response: %s', response.text)
 
         if response.status_code != 200:
@@ -186,18 +187,18 @@ class CreateDevice(object):
             if result == 'true':
                 # Save this for future switch off
                 self.xml_motion_detection_on = ElementTree.tostring(
-                    tree, encoding=XML_ENCODING)
+                    tree)
                 find_result[0].text = 'false'
                 self.xml_motion_detection_off = ElementTree.tostring(
-                    tree, encoding=XML_ENCODING)
+                    tree)
                 return True
             else:
                 # Save this for future switch on
                 self.xml_motion_detection_off = ElementTree.tostring(
-                    tree, encoding=XML_ENCODING)
+                    tree)
                 find_result[0].text = 'true'
                 self.xml_motion_detection_on = ElementTree.tostring(
-                    tree, encoding=XML_ENCODING)
+                    tree)
                 return False
 
         except AttributeError as attib_err:
@@ -222,9 +223,15 @@ class CreateDevice(object):
         _LOGGING.debug('xml:')
         _LOGGING.debug("%s", xml)
 
+        headers = DEFAULT_HEADERS
+        headers['Content-Length'] = len(xml)
+        headers['Host'] = self._host
         response = requests.put(self.motion_url, auth=HTTPBasicAuth(
-            self._username, self._password), verify=True, data=xml)
-        _LOGGING.debug('Response: %s', response.text)
+            self._username, self._password), data=xml, headers=headers)
+        _LOGGING.debug('request.headers:')
+        _LOGGING.debug('%s', response.request.headers)
+        _LOGGING.debug('Response:')
+        _LOGGING.debug('%s', response.text)
 
         if response.status_code != 200:
             _LOGGING.error(
