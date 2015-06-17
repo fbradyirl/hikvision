@@ -13,7 +13,7 @@ import requests
 import re
 from xml.etree import ElementTree
 from hikvision.error import HikvisionError, MissingParamError
-from hikvision.constants import DEFAULT_PORT
+from hikvision.constants import DEFAULT_PORT, XML_ENCODING
 from requests.exceptions import ConnectionError as ReConnError
 from requests.auth import HTTPBasicAuth
 
@@ -186,18 +186,18 @@ class CreateDevice(object):
             if result == 'true':
                 # Save this for future switch off
                 self.xml_motion_detection_on = ElementTree.tostring(
-                    tree, encoding='utf8')
+                    tree, encoding=XML_ENCODING)
                 find_result[0].text = 'false'
                 self.xml_motion_detection_off = ElementTree.tostring(
-                    tree, encoding='utf8')
+                    tree, encoding=XML_ENCODING)
                 return True
             else:
                 # Save this for future switch on
                 self.xml_motion_detection_off = ElementTree.tostring(
-                    tree, encoding='utf8')
+                    tree, encoding=XML_ENCODING)
                 find_result[0].text = 'true'
                 self.xml_motion_detection_on = ElementTree.tostring(
-                    tree, encoding='utf8')
+                    tree, encoding=XML_ENCODING)
                 return False
 
         except AttributeError as attib_err:

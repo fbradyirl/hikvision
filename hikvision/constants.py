@@ -9,3 +9,4 @@ Licensed under the MIT license.
 """
 
 DEFAULT_PORT = None
+XML_ENCODING = 'UTF-8'
