@@ -4,6 +4,13 @@
 # Used this guide to create module
 # http://peterdowns.com/posts/first-time-with-pypi.html
 
+# git tag 0.1 -m "0.1 release"
+# git push --tags origin master
+# 
+# Upload to PyPI Live
+# python setup.py register -r pypi
+# python setup.py sdist upload -r pypi
+
 from distutils.core import setup
 
 setup(
