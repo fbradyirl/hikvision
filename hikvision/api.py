@@ -226,7 +226,7 @@ class CreateDevice(object):
         headers = DEFAULT_HEADERS
         headers['Content-Length'] = len(xml)
         headers['Host'] = self._host
-        response = requests.put(self.motion_url, auth=HTTPBasicAuth(
+        response = requests.patch(self.motion_url, auth=HTTPBasicAuth(
             self._username, self._password), data=xml, headers=headers)
         _LOGGING.debug('request.headers:')
         _LOGGING.debug('%s', response.request.headers)
