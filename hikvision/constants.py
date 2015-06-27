@@ -12,6 +12,6 @@ DEFAULT_PORT = None
 XML_ENCODING = 'UTF-8'
 
 DEFAULT_HEADERS = {
-    'Content-Type': 'application/xml; charset=UTF-8',
-    'Accept': '*/*'
+    'Content-Type': "application/xml; charset='UTF-8'",
+    'Accept': "*/*"
 }
