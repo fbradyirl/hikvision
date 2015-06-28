@@ -14,6 +14,7 @@ import re
 from xml.etree import ElementTree
 from hikvision.error import HikvisionError, MissingParamError
 from hikvision.constants import DEFAULT_PORT, DEFAULT_HEADERS, XML_ENCODING
+from hikvision.constants import DEFAULT_SENS_LEVEL
 from requests.exceptions import ConnectionError as ReConnError
 from requests.auth import HTTPBasicAuth
 
@@ -159,7 +160,8 @@ class CreateDevice(object):
                 return
         return
 
-    def is_motion_detection_enabled(self):
+    def is_motion_detection_enabled(self,
+                                    sensitivity_level=DEFAULT_SENS_LEVEL):
         """ Get current state of Motion Detection """
 
         response = requests.get(self.motion_url, auth=HTTPBasicAuth(
@@ -175,20 +177,33 @@ class CreateDevice(object):
         try:
 
             tree = ElementTree.fromstring(response.text)
-            find_result = tree.findall('.//{%s}enabled' % self._xml_namespace)
-            if len(find_result) == 0:
+            enabled_element = tree.findall(
+                './/{%s}enabled' % self._xml_namespace)
+            sensitivity_level_element = tree.findall(
+                './/{%s}sensitivityLevel' % self._xml_namespace)
+            if len(enabled_element) == 0:
                 _LOGGING.error("Problem getting motion detection status")
                 return
+            if len(sensitivity_level_element) == 0:
+                _LOGGING.error("Problem getting sensitivityLevel status")
+                return
 
-            result = find_result[0].text.strip()
+            result = enabled_element[0].text.strip()
             _LOGGING.info(
                 'Current motion detection state? enabled: %s', result)
+
+            if int(sensitivity_level_element[0].text) == 0:
+                _LOGGING.warn(
+                    "sensitivityLevel is 0.")
+                sensitivity_level_element[0].text = str(sensitivity_level)
+                _LOGGING.info(
+                    "sensitivityLevel now set to %s", sensitivity_level)
 
             if result == 'true':
                 # Save this for future switch off
                 self.xml_motion_detection_on = ElementTree.tostring(
                     tree, encoding=XML_ENCODING)
-                find_result[0].text = 'false'
+                enabled_element[0].text = 'false'
                 self.xml_motion_detection_off = ElementTree.tostring(
                     tree, encoding=XML_ENCODING)
                 return True
@@ -196,7 +211,7 @@ class CreateDevice(object):
                 # Save this for future switch on
                 self.xml_motion_detection_off = ElementTree.tostring(
                     tree, encoding=XML_ENCODING)
-                find_result[0].text = 'true'
+                enabled_element[0].text = 'true'
                 self.xml_motion_detection_on = ElementTree.tostring(
                     tree, encoding=XML_ENCODING)
                 return False
@@ -241,13 +256,13 @@ class CreateDevice(object):
 
         try:
             tree = ElementTree.fromstring(response.text)
-            find_result = tree.findall(
+            enabled_element = tree.findall(
                 './/{%s}statusString' % self._xml_namespace)
-            if len(find_result) == 0:
+            if len(enabled_element) == 0:
                 _LOGGING.error("Problem getting motion detection status")
                 return
 
-            if find_result[0].text.strip() == 'OK':
+            if enabled_element[0].text.strip() == 'OK':
                 _LOGGING.info('Updated successfully')
 
         except AttributeError as attib_err:

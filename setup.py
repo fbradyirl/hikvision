@@ -15,12 +15,12 @@ from distutils.core import setup
 
 setup(
     name='hikvision',
-    version='1.0',
+    version='1.1',
     description='Provides a python interface to interact with a hikvision camera',
     author='Finbarr Brady',
     author_email='fbradyirl@users.noreply.github.com',
     url='https://github.com/fbradyirl/hikvision',
-    download_url = 'https://github.com/fbradyirl/hikvision/tarball/1.0',
+    download_url = 'https://github.com/fbradyirl/hikvision/tarball/1.1',
     keywords='hikvision camera python cgi interface',
     packages=['hikvision'],
     classifiers = [
