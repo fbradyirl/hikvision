@@ -67,7 +67,8 @@ class CreateDevice(object):
     """
 
     def __init__(self, host=None, port=DEFAULT_PORT,
-                 username=None, password=None, is_https=False):
+                 username=None, password=None, is_https=False,
+                 sensitivity_level=DEFAULT_SENS_LEVEL):
         enable_logging()
         _LOGGING.info("Initialising new hikvision camera client")
 
@@ -78,6 +79,7 @@ class CreateDevice(object):
         self._username = username
         self._host = host
         self._password = password
+        self._sensitivity_level = sensitivity_level
         self.xml_motion_detection_off = None
         self.xml_motion_detection_on = None
 
@@ -160,8 +162,7 @@ class CreateDevice(object):
                 return
         return
 
-    def is_motion_detection_enabled(self,
-                                    sensitivity_level=DEFAULT_SENS_LEVEL):
+    def is_motion_detection_enabled(self):
         """ Get current state of Motion Detection """
 
         response = requests.get(self.motion_url, auth=HTTPBasicAuth(
@@ -195,9 +196,10 @@ class CreateDevice(object):
             if int(sensitivity_level_element[0].text) == 0:
                 _LOGGING.warn(
                     "sensitivityLevel is 0.")
-                sensitivity_level_element[0].text = str(sensitivity_level)
+                sensitivity_level_element[0].text = str(
+                    self._sensitivity_level)
                 _LOGGING.info(
-                    "sensitivityLevel now set to %s", sensitivity_level)
+                    "sensitivityLevel now set to %s", self._sensitivity_level)
 
             if result == 'true':
                 # Save this for future switch off
