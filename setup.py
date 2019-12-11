@@ -1,4 +1,4 @@
-# Copyright (c) 2015 Finbarr Brady <https://github.com/fbradyirl>
+# Copyright (c) 2015, 2019 Finbarr Brady <https://github.com/fbradyirl>
 # Licensed under the MIT license.
 
 # Used this guide to create module
@@ -15,7 +15,7 @@ from distutils.core import setup
 
 setup(
     name='hikvision',
-    version='1.2',
+    version='1.3',
     description='Provides a python interface to interact with a hikvision camera',
     author='Finbarr Brady',
     author_email='fbradyirl@users.noreply.github.com',

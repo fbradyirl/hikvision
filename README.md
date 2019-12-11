@@ -40,6 +40,10 @@ Variables:
 import hikvision.api
 
 # This will use http by default (not https)
+# pass False to the digest_auth parameter of CreateDevice to fallback to basic auth
+# (note that basic auth and http without ssl are inherently insecure)
+# more recent hikvision firmwares default to turning basic auth off
+# (and that's a good idea for security)
 hik_camera = hikvision.api.CreateDevice('192.168.2.5', username='admin', password='12345')
 hik_camera.enable_motion_detection()
 hik_camera.disable_motion_detection()
@@ -77,4 +81,4 @@ pylint hikvision
 coverage run -m unittest discover tests
 ```
 
-Copyright (c) 2015 Finbarr Brady.
+Copyright (c) 2015, 2019 Finbarr Brady.
