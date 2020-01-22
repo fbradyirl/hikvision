@@ -16,7 +16,7 @@ from hikvision.error import HikvisionError, MissingParamError
 from hikvision.constants import DEFAULT_PORT, DEFAULT_HEADERS, XML_ENCODING
 from hikvision.constants import DEFAULT_SENS_LEVEL
 from requests.exceptions import ConnectionError as ReConnError
-from requests.auth import HTTPBasicAuth
+from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
 _LOGGING = logging.getLogger(__name__)
 
@@ -57,7 +57,12 @@ def enable_logging():
 
 def remove_namespace(response):
     """ Removes namespace element from xml"""
-    return re.sub(' xmlns="[^"]+"', '', response, count=1)
+    return re.sub(' xmlns="[^"]+"', '', response)
+
+
+def tree_no_ns_from_string(response):
+    text = remove_namespace(response)
+    return ElementTree.fromstring(text)
 
 
 class CreateDevice(object):
@@ -68,7 +73,8 @@ class CreateDevice(object):
 
     def __init__(self, host=None, port=DEFAULT_PORT,
                  username=None, password=None, is_https=False,
-                 sensitivity_level=DEFAULT_SENS_LEVEL):
+                 sensitivity_level=DEFAULT_SENS_LEVEL,
+                 digest_auth=True, strict_isapi=True):
         enable_logging()
         _LOGGING.info("Initialising new hikvision camera client")
 
@@ -76,10 +82,17 @@ class CreateDevice(object):
             _LOGGING.error('Missing hikvision host!')
             raise MissingParamError('Connection to hikvision failed.', None)
 
+        if not digest_auth and not is_https:
+            _LOGGING.warning("%s: HTTP Basic Auth without SSL is insecure",
+                             host)
+
         self._username = username
         self._host = host
         self._password = password
         self._sensitivity_level = sensitivity_level
+        self._digest_auth = digest_auth
+        self._strict_isapi = strict_isapi
+        self._auth_fn = HTTPDigestAuth if self._digest_auth else HTTPBasicAuth
         self.xml_motion_detection_off = None
         self.xml_motion_detection_on = None
 
@@ -87,26 +100,35 @@ class CreateDevice(object):
         self._base = build_url_base(host, port, is_https)
 
         # need to support different channel
-        self.motion_url = '%s/MotionDetection/1' % self._base
+        if self._strict_isapi:
+            self.motion_url = (
+                '%s/ISAPI/System/Video/Inputs/channels/1/motionDetection' %
+                self._base)
+            self.deviceinfo_url = '%s/ISAPI/System/deviceInfo' % self._base
+#            self._xml_namespace = "{http://www.hikvision.com/ver20/XMLSchema}"
+        else:
+            self.motion_url = '%s/MotionDetection/1' % self._base
+            self.deviceinfo_url = '%s/System/deviceInfo' % self._base
+#            self._xml_namespace = "{http://www.hikvision.com/ver10/XMLSchema}"
+        self._xml_namespace = ""
         _LOGGING.info('motion_url: %s', self.motion_url)
 
-        self._xml_namespace = "http://www.hikvision.com/ver10/XMLSchema"
         # Required to parse and change xml with the host camera
-        _LOGGING.info(
-            'ElementTree.register_namespace: %s', self._xml_namespace)
-        ElementTree.register_namespace("", self._xml_namespace)
+        # _LOGGING.info(
+        #    'ElementTree.register_namespace: %s', self._xml_namespace)
+        # ElementTree.register_namespace("", self._xml_namespace)
 
         try:
             _LOGGING.info("Going to probe device to test connection")
             version = self.get_version()
             enabled = self.is_motion_detection_enabled()
-            _LOGGING.info("Connected OK!")
-            _LOGGING.info("Camera firmaward version: %s", version)
-            _LOGGING.info("Motion Detection enabled: %s", enabled)
+            _LOGGING.info("%s Connected OK! firmware = %s, "
+                          "motion detection enabled = %s", self._host,
+                          version, enabled)
 
         except ReConnError as conn_err:
-            # _LOGGING.exception("Unable to connect to %s", host)
-            raise HikvisionError('Connection to hikvision failed.', conn_err)
+            raise HikvisionError('Connection to hikvision %s failed' %
+                                 self._host, conn_err)
 
     def get_version(self):
         """
@@ -121,11 +143,11 @@ class CreateDevice(object):
         or if element_to_query is not None, the value of that element
         """
 
-        url = '%s/System/deviceInfo' % self._base
-        _LOGGING.info('url: %s', url)
+        _LOGGING.info('url: %s', self.deviceinfo_url)
 
         response = requests.get(
-            url, auth=HTTPBasicAuth(self._username, self._password))
+            self.deviceinfo_url,
+            auth=self._auth_fn(self._username, self._password))
 
         _LOGGING.debug('response: %s', response)
         _LOGGING.debug("status_code %s", response.status_code)
@@ -138,9 +160,9 @@ class CreateDevice(object):
             return response.text
         else:
             try:
-                tree = ElementTree.fromstring(response.text)
+                tree = tree_no_ns_from_string(response.text)
 
-                element_to_query = './/{%s}%s' % (
+                element_to_query = './/%s%s' % (
                     self._xml_namespace, element_to_query)
                 result = tree.findall(element_to_query)
                 if len(result) > 0:
@@ -163,43 +185,48 @@ class CreateDevice(object):
         return
 
     def is_motion_detection_enabled(self):
-        """ Get current state of Motion Detection """
+        """Get current state of Motion Detection.
 
-        response = requests.get(self.motion_url, auth=HTTPBasicAuth(
+        Returns False on error or if motion detection is off."""
+
+        response = requests.get(self.motion_url, auth=self._auth_fn(
             self._username, self._password))
         _LOGGING.debug('Response: %s', response.text)
 
         if response.status_code != 200:
             _LOGGING.error(
-                "There was an error connecting to %s", self.motion_url)
-            _LOGGING.error("status_code %s", response.status_code)
-            return
+                "%s: Error connecting to %s: status_code = %s",
+                self._host, self.motion_url, response.status_code)
+            return False
 
         try:
 
-            tree = ElementTree.fromstring(response.text)
+            tree = tree_no_ns_from_string(response.text)
             enabled_element = tree.findall(
-                './/{%s}enabled' % self._xml_namespace)
+                './/%senabled' % self._xml_namespace)
             sensitivity_level_element = tree.findall(
-                './/{%s}sensitivityLevel' % self._xml_namespace)
+                './/%ssensitivityLevel' % self._xml_namespace)
             if len(enabled_element) == 0:
-                _LOGGING.error("Problem getting motion detection status")
-                return
+                _LOGGING.error("%s: Problem getting motion detection status",
+                               self._host)
+                return False
             if len(sensitivity_level_element) == 0:
-                _LOGGING.error("Problem getting sensitivityLevel status")
-                return
+                _LOGGING.error("%s: Problem getting sensitivityLevel status",
+                               self._host)
+                return False
 
             result = enabled_element[0].text.strip()
             _LOGGING.info(
-                'Current motion detection state? enabled: %s', result)
+                '%s motion detection state, enabled: %s', self._host, result)
 
             if int(sensitivity_level_element[0].text) == 0:
                 _LOGGING.warn(
-                    "sensitivityLevel is 0.")
+                    "%s sensitivityLevel is 0.", self._host)
                 sensitivity_level_element[0].text = str(
                     self._sensitivity_level)
                 _LOGGING.info(
-                    "sensitivityLevel now set to %s", self._sensitivity_level)
+                    "%s sensitivityLevel now set to %s",
+                    self._host, self._sensitivity_level)
 
             if result == 'true':
                 # Save this for future switch off
@@ -220,8 +247,8 @@ class CreateDevice(object):
 
         except AttributeError as attib_err:
             _LOGGING.error(
-                'There was a problem parsing '
-                'camera motion detection state: %s', attib_err)
+                '%s: Problem parsing '
+                'camera motion detection state: %s', self._host, attib_err)
             return
 
     def enable_motion_detection(self):
@@ -243,7 +270,7 @@ class CreateDevice(object):
         headers = DEFAULT_HEADERS
         headers['Content-Length'] = len(xml)
         headers['Host'] = self._host
-        response = requests.put(self.motion_url, auth=HTTPBasicAuth(
+        response = requests.put(self.motion_url, auth=self._auth_fn(
             self._username, self._password), data=xml, headers=headers)
         _LOGGING.debug('request.headers:')
         _LOGGING.debug('%s', response.request.headers)
@@ -252,22 +279,24 @@ class CreateDevice(object):
 
         if response.status_code != 200:
             _LOGGING.error(
-                "There was an error connecting to %s", self.motion_url)
-            _LOGGING.error("status_code %s", response.status_code)
+                "%s: Error connecting to %s: status_code = %s",
+                self._host, self.motion_url, response.status_code)
             return
 
         try:
-            tree = ElementTree.fromstring(response.text)
+            tree = tree_no_ns_from_string(response.text)
             enabled_element = tree.findall(
-                './/{%s}statusString' % self._xml_namespace)
+                './/%sstatusString' % self._xml_namespace)
             if len(enabled_element) == 0:
-                _LOGGING.error("Problem getting motion detection status")
+                _LOGGING.error("%s: Problem getting motion detection status",
+                               self._host)
                 return
 
             if enabled_element[0].text.strip() == 'OK':
                 _LOGGING.info('Updated successfully')
 
-        except AttributeError as attib_err:
+        except AttributeError as attrib_err:
             _LOGGING.error(
-                'There was a problem parsing the response: %s', attib_err)
+                '%s: Problem parsing the response: %s',
+                self._host, attrib_err)
             return
