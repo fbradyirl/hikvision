@@ -28,6 +28,7 @@ setup(
     license='MIT',
     long_description=readme,
     include_package_data=True,
+    long_description_content_type="text/markdown",
     keywords='hikvision camera python cgi interface',
     name='hikvision',
     packages=['hikvision'],
