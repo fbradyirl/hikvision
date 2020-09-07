@@ -21,6 +21,7 @@ setup(
     author_email='fbradyirl@users.noreply.github.com',
     url='https://github.com/fbradyirl/hikvision',
     download_url = 'https://github.com/fbradyirl/hikvision/tarball/1.2',
+    license='MIT',
     keywords='hikvision camera python cgi interface',
     packages=['hikvision'],
     classifiers = [
