@@ -1,12 +1,15 @@
 language: python
 python:
-  - "3.4"
-install:
-  - pip install -r requirements.txt
-  - pip install flake8 pylint coveralls
-script:
-  - flake8 hikvision
-  - pylint hikvision
-  - coverage run -m unittest discover tests
-after_success:
-  - coveralls
+- 3.6
+install: pip install -U tox-travis
+script: tox
+deploy:
+  provider: pypi
+  distributions: sdist bdist_wheel
+  user: __token__
+  password:
+    secure: RB+CHhwaH4Ffyhkz9kWdP5xv/wYngWcjEPuSZjXYr/wWPi+U0SE3gdYDgQdiLr+I21w1w694TSNs0KrndFNykJFceBuJc+WHlbzeM4RsxZnIOfFpwwaVZXOTQj0cRZpjDnW1cAPMF34Zm1GAuATGb41kLAL+YDqMX3KXEtmfaiAfbHA6Jd5XkZN/YCruKHPAfO2ir07qc/9eUxQghNyr7/hCjuvMQzidmzbyn1qakUnXVYAyrtEzyuClrXNj2RkWQLOtPaj1lMa6YqfbL1P46b6yUUq7wxoXElTmVwfSHhkJvJclTOOwgwBBDi76CK11RRla5Tj3sYlRhwUtrGyJHDT1TkwQHqh2kyH1qPEuU6dQC6YJfGIN2WVbKuP6h1BfDAcuIQtAj6j5G/xKLLIPGA4r/aeUBcnw6l13hF8qxfsIfr3EpRkRCgVOnXywghbFIV8kI0dzTJXXHABf/T2V5VcbW5vhlENE0zH5tk11KacogSAuPIskcvye8wu2KYR0alSR8x4L3FDa4Znswf2FFoCnYNFeryDH6Nt9/DZW5FuLQl81L7WmwVmK70lJw72Y/tPn+T7KicBBZfCaMpIItyNVm2tgBLZ7RNImUQqKdOhfTfqVXKFAGtgbUVm7YoLxrLbr2GFJqUZZRVIGOxlwA3/E2Jv+lIAFOlU5AF60UlQ=
+  on:
+    tags: true
+    python: 3.6
+    repo: fbradyirl/hikvision

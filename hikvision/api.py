@@ -131,7 +131,7 @@ class CreateDevice:
 
         except ReConnError as conn_err:
             raise HikvisionError('Connection to hikvision %s failed' %
-                                 self._host, conn_err)
+                                 self._host, conn_err) from conn_err
 
     def get_version(self):
         """

@@ -1,32 +1,43 @@
-# Copyright (c) 2015, 2019 Finbarr Brady <https://github.com/fbradyirl>
-# Licensed under the MIT license.
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-# Used this guide to create module
-# http://peterdowns.com/posts/first-time-with-pypi.html
+"""The setup script."""
 
-# git tag 0.1 -m "0.1 release"
-# git push --tags origin master
-#
-# Upload to PyPI Live
-# python setup.py register -r pypi ; python setup.py sdist upload -r pypi
-#
+from setuptools import setup, find_packages
 
-from distutils.core import setup
+with open('README.md') as readme_file:
+    readme = readme_file.read()
+
+with open('HISTORY.rst') as history_file:
+    history = history_file.read()
+
+requirements = ['requests>=2.21.0']
+
+setup_requirements = [ ]
+
+test_requirements = [ ]
 
 setup(
-    name='hikvision',
-    version='1.3',
+    author="Finbarr Brady",
+    author_email='fbradyirl@github.io',
+    classifiers=[
+        'Development Status :: 2 - Pre-Alpha',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: Apache Software License',
+        'Natural Language :: English',
+        'Programming Language :: Python :: 3.7',
+    ],
     description='Provides a python interface to interact with a hikvision camera',
-    author='Finbarr Brady',
-    author_email='fbradyirl@users.noreply.github.com',
-    url='https://github.com/fbradyirl/hikvision',
-    download_url = 'https://github.com/fbradyirl/hikvision/tarball/1.2',
+    install_requires=requirements,
     license='MIT',
+    long_description=readme + '\n\n' + history,
+    include_package_data=True,
     keywords='hikvision camera python cgi interface',
     packages=['hikvision'],
-    classifiers = [
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
-        'Topic :: Internet'
-        ],
-    )
+    setup_requires=setup_requirements,
+    test_suite='tests',
+    tests_require=test_requirements,
+    url='https://github.com/fbradyirl/hikvision',
+    version='2.0.0',
+    zip_safe=False,
+)
