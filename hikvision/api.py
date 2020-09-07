@@ -9,14 +9,16 @@ Licensed under the MIT license.
 """
 
 import logging
-import requests
-import re
 from xml.etree import ElementTree
+import re
+
+import requests
+from requests.exceptions import ConnectionError as ReConnError
+from requests.auth import HTTPBasicAuth, HTTPDigestAuth
+
 from hikvision.error import HikvisionError, MissingParamError
 from hikvision.constants import DEFAULT_PORT, DEFAULT_HEADERS, XML_ENCODING
 from hikvision.constants import DEFAULT_SENS_LEVEL
-from requests.exceptions import ConnectionError as ReConnError
-from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
 _LOGGING = logging.getLogger(__name__)
 
@@ -61,11 +63,12 @@ def remove_namespace(response):
 
 
 def tree_no_ns_from_string(response):
+    """ Removes namespace element from response"""
     text = remove_namespace(response)
     return ElementTree.fromstring(text)
 
 
-class CreateDevice(object):
+class CreateDevice:
 
     """
     Creates a new camera api device
@@ -158,31 +161,29 @@ class CreateDevice(object):
 
         if element_to_query is None:
             return response.text
-        else:
-            try:
-                tree = tree_no_ns_from_string(response.text)
+        try:
+            tree = tree_no_ns_from_string(response.text)
 
-                element_to_query = './/%s%s' % (
-                    self._xml_namespace, element_to_query)
-                result = tree.findall(element_to_query)
-                if len(result) > 0:
-                    _LOGGING.debug('element_to_query: %s result: %s',
-                                   element_to_query, result[0])
+            element_to_query = './/%s%s' % (
+                self._xml_namespace, element_to_query)
+            result = tree.findall(element_to_query)
+            if len(result) > 0:
+                _LOGGING.debug('element_to_query: %s result: %s',
+                               element_to_query, result[0])
 
-                    return result[0].text.strip()
-                else:
-                    _LOGGING.error(
-                        'There was a problem finding element: %s',
-                        element_to_query)
-                    _LOGGING.error('Entire response: %s', response.text)
+                return result[0].text.strip()
+            _LOGGING.error(
+                'There was a problem finding element: %s',
+                element_to_query)
+            _LOGGING.error('Entire response: %s', response.text)
 
-            except AttributeError as attib_err:
-                _LOGGING.error('Entire response: %s', response.text)
-                _LOGGING.error(
-                    'There was a problem finding element:'
-                    ' %s AttributeError: %s', element_to_query, attib_err)
-                return
-        return
+        except AttributeError as attib_err:
+            _LOGGING.error('Entire response: %s', response.text)
+            _LOGGING.error(
+                'There was a problem finding element:'
+                ' %s AttributeError: %s', element_to_query, attib_err)
+            return None
+        return None
 
     def is_motion_detection_enabled(self):
         """Get current state of Motion Detection.
@@ -220,7 +221,7 @@ class CreateDevice(object):
                 '%s motion detection state, enabled: %s', self._host, result)
 
             if int(sensitivity_level_element[0].text) == 0:
-                _LOGGING.warn(
+                _LOGGING.warning(
                     "%s sensitivityLevel is 0.", self._host)
                 sensitivity_level_element[0].text = str(
                     self._sensitivity_level)
@@ -236,20 +237,19 @@ class CreateDevice(object):
                 self.xml_motion_detection_off = ElementTree.tostring(
                     tree, encoding=XML_ENCODING)
                 return True
-            else:
-                # Save this for future switch on
-                self.xml_motion_detection_off = ElementTree.tostring(
-                    tree, encoding=XML_ENCODING)
-                enabled_element[0].text = 'true'
-                self.xml_motion_detection_on = ElementTree.tostring(
-                    tree, encoding=XML_ENCODING)
-                return False
+            # Save this for future switch on
+            self.xml_motion_detection_off = ElementTree.tostring(
+                tree, encoding=XML_ENCODING)
+            enabled_element[0].text = 'true'
+            self.xml_motion_detection_on = ElementTree.tostring(
+                tree, encoding=XML_ENCODING)
+            return False
 
         except AttributeError as attib_err:
             _LOGGING.error(
                 '%s: Problem parsing '
                 'camera motion detection state: %s', self._host, attib_err)
-            return
+            return False
 
     def enable_motion_detection(self):
         """ Enable Motion Detection """

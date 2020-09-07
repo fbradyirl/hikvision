@@ -27,8 +27,7 @@ class MissingParamError(Exception):
             message = '%s Original exception: '\
                 '%s, "%s"' % (self.message, original_name, str(self.original))
             return message
-        else:
-            return self.message
+        return self.message
 
 
 class HikvisionError(Exception):
@@ -49,5 +48,4 @@ class HikvisionError(Exception):
             message = '%s Original exception:'\
                 ' %s, "%s"' % (self.message, original_name, str(self.original))
             return message
-        else:
-            return self.message
+        return self.message
