@@ -1,16 +1,13 @@
 # Introduction 
 
-[![Pypi](https://img.shields.io/pypi/v/hikvision.svg)](https://pypi.python.org/pypi/hikvision) 
+[![Pypi](https://img.shields.io/pypi/v/hikvision.svg)](https://pypi.python.org/pypi/hikvision) [![Build Status](https://travis-ci.org/fbradyirl/hikvision.svg?branch=master)](https://travis-ci.org/fbradyirl/hikvision) [![Coverage Status](https://coveralls.io/repos/fbradyirl/hikvision/badge.svg?branch=master)](https://coveralls.io/r/fbradyirl/hikvision?branch=master)
 
-[![Build Status](https://travis-ci.org/fbradyirl/hikvision.svg?branch=master)](https://travis-ci.org/fbradyirl/hikvision) [![Coverage Status](https://coveralls.io/repos/fbradyirl/hikvision/badge.svg?branch=master)](https://coveralls.io/r/fbradyirl/hikvision?branch=master)
-
-This is a python module providing a basic python
+This is a very basic python module providing a basic python
 interface to interact with a Hikvision IP Camera
 
 This is licensed under the MIT license.
 
 ## Getting started
-===============
 
 This module is tested against firmware 5.2.0.
 It may work on older versions, but that has not been tested.
@@ -19,12 +16,16 @@ For further info on  the camera API's see:
 CGI API Guide:
 http://bit.ly/1RuyUuF
 
-## Requirements
-------------
 
-module requires:
- * requests>=2.0
+## Development
 
+hikvision is hosted by Github at https://github.com/fbradyirl/hikvision
+
+CI run after commit:
+
+```python
+tox
+```
 
 ## Install
 -------
@@ -54,38 +55,11 @@ hik_camera.disable_motion_detection()
 hik_camera.is_motion_detection_enabled()
 ```
 
-host
-*Required
-This is the IP address of your Hikvision camera. Example: 192.168.1.32
+* `host` (*Required) : This is the IP address of your Hikvision camera. Example: 192.168.1.32
 
-username
-*Required
-Your Hikvision camera username
+* `username` (*Required) : Your Hikvision camera username
 
-password
-*Required
-Your Hikvision camera username
-
-
-
-## TODO
-------------
-Add more functions
-
-## Developer
-=========
-
-hikvision is hosted by Github at https://github.com/fbradyirl/hikvision
-
-CI run after commit:
-
-```python
-flake8 hikvision
-pylint hikvision
-coverage run -m unittest discover tests
-```
-
-Copyright (c) 2015, 2019 Finbarr Brady.
+* `password` (*Required) : Your Hikvision camera username
 
 
 # History
