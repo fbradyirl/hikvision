@@ -65,7 +65,7 @@ hik_camera.is_motion_detection_enabled()
 # History
 
 
-2.0.2 (07-09-2020)
+2.0.3 (07-09-2020)
 ------------------
 
 * Updated to use travis, tox, and some other cosmetic improvements.
