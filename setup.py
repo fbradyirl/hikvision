@@ -11,7 +11,7 @@ with open('README.md') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['requests>=2.21.0']
+requirements = ['Click>=6.0', 'requests>=2.21.0']
 
 setup_requirements = [ ]
 
@@ -33,6 +33,7 @@ setup(
     long_description=readme + '\n\n' + history,
     include_package_data=True,
     keywords='hikvision camera python cgi interface',
+    name='hikvision',
     packages=['hikvision'],
     setup_requires=setup_requirements,
     test_suite='tests',
