@@ -1,11 +1,15 @@
-# Introduction [![Build Status](https://travis-ci.org/fbradyirl/hikvision.svg?branch=master)](https://travis-ci.org/fbradyirl/hikvision) [![Coverage Status](https://coveralls.io/repos/fbradyirl/hikvision/badge.svg?branch=master)](https://coveralls.io/r/fbradyirl/hikvision?branch=master)
+# Introduction 
+
+[![Pypi](https://img.shields.io/pypi/v/hikvision.svg)](https://pypi.python.org/pypi/hikvision) 
+
+[![Build Status](https://travis-ci.org/fbradyirl/hikvision.svg?branch=master)](https://travis-ci.org/fbradyirl/hikvision) [![Coverage Status](https://coveralls.io/repos/fbradyirl/hikvision/badge.svg?branch=master)](https://coveralls.io/r/fbradyirl/hikvision?branch=master)
 
 This is a python module providing a basic python
 interface to interact with a Hikvision IP Camera
 
 This is licensed under the MIT license.
 
-Getting started
+## Getting started
 ===============
 
 This module is tested against firmware 5.2.0.
@@ -15,14 +19,14 @@ For further info on  the camera API's see:
 CGI API Guide:
 http://bit.ly/1RuyUuF
 
-Requirements
+## Requirements
 ------------
 
 module requires:
  * requests>=2.0
 
 
-Install
+## Install
 -------
 ```python
 git clone --recursive git@github.com:fbradyirl/hikvision.git
@@ -64,11 +68,11 @@ Your Hikvision camera username
 
 
 
-TODO
+## TODO
 ------------
 Add more functions
 
-Developer
+## Developer
 =========
 
 hikvision is hosted by Github at https://github.com/fbradyirl/hikvision
@@ -82,3 +86,14 @@ coverage run -m unittest discover tests
 ```
 
 Copyright (c) 2015, 2019 Finbarr Brady.
+
+
+# History
+
+
+2.0.2 (07-09-2020)
+------------------
+
+* Updated to use travis, tox, and some other cosmetic improvements.
+
+

@@ -2,16 +2,12 @@
 # -*- coding: utf-8 -*-
 
 """The setup script."""
-
-from setuptools import setup, find_packages
+from setuptools import setup, Extension, find_packages
 
 with open('README.md') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
-
-requirements = ['Click>=6.0', 'requests>=2.21.0']
+requirements = ['requests>=2.21.0']
 
 setup_requirements = [ ]
 
@@ -30,7 +26,7 @@ setup(
     description='Provides a python interface to interact with a hikvision camera',
     install_requires=requirements,
     license='MIT',
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     include_package_data=True,
     keywords='hikvision camera python cgi interface',
     name='hikvision',
