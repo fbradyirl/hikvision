@@ -2,7 +2,7 @@
 
 [![Pypi](https://img.shields.io/pypi/v/hikvision.svg)](https://pypi.python.org/pypi/hikvision) [![Build Status](https://travis-ci.org/fbradyirl/hikvision.svg?branch=master)](https://travis-ci.org/fbradyirl/hikvision) [![Coverage Status](https://coveralls.io/repos/fbradyirl/hikvision/badge.svg?branch=master)](https://coveralls.io/r/fbradyirl/hikvision?branch=master)
 
-![Pipeline](https://github.com/fbradyirl/hikvision/workflows/.github/workflows/main.yml/badge.svg)
+![Pipeline](https://github.com/fbradyirl/hikvision/workflows/Python%20package/badge.svg)
 
 
 This is a very basic python module providing a basic python
