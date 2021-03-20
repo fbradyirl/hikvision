@@ -268,7 +268,7 @@ class CreateDevice:
         _LOGGING.debug("%s", xml)
 
         headers = DEFAULT_HEADERS
-        headers['Content-Length'] = len(xml)
+        headers['Content-Length'] = str(len(xml))
         headers['Host'] = self._host
         response = requests.put(self.motion_url, auth=self._auth_fn(
             self._username, self._password), data=xml, headers=headers)
