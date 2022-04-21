@@ -98,6 +98,8 @@ class CreateDevice:
         self._auth_fn = HTTPDigestAuth if self._digest_auth else HTTPBasicAuth
         self.xml_motion_detection_off = None
         self.xml_motion_detection_on = None
+        self.xml_overlays_off = None
+        self.xml_overlays_on = None
 
         # Now build base url
         self._base = build_url_base(host, port, is_https)
@@ -107,14 +109,24 @@ class CreateDevice:
             self.motion_url = (
                 '%s/ISAPI/System/Video/Inputs/channels/1/motionDetection' %
                 self._base)
+            self.channel_name_overlay_url = (
+                '%s/ISAPI/System/Video/inputs/channels/1/overlays/channelNameOverlay' %
+                self._base)
+            self.date_time_overlay_url = (
+                '%s/ISAPI/System/Video/inputs/channels/1/overlays/dateTimeOverlay' %
+                self._base)
             self.deviceinfo_url = '%s/ISAPI/System/deviceInfo' % self._base
 #            self._xml_namespace = "{http://www.hikvision.com/ver20/XMLSchema}"
         else:
             self.motion_url = '%s/MotionDetection/1' % self._base
+            self.channel_name_overlay_url = '%s/overlays/channelNameOverlay' % self._base
+            self.date_time_overlay_url = '%s/overlays/dateTimeOverlay' % self._base
             self.deviceinfo_url = '%s/System/deviceInfo' % self._base
 #            self._xml_namespace = "{http://www.hikvision.com/ver10/XMLSchema}"
         self._xml_namespace = ""
         _LOGGING.info('motion_url: %s', self.motion_url)
+        _LOGGING.info('channel_name_overlay_url: %s', self.channel_name_overlay_url)
+        _LOGGING.info('date_time_overlay_url: %s', self.date_time_overlay_url)
 
         # Required to parse and change xml with the host camera
         # _LOGGING.info(
@@ -133,6 +145,47 @@ class CreateDevice:
             raise HikvisionError('Connection to hikvision %s failed' %
                                  self._host, conn_err) from conn_err
 
+
+    def get_isapi_content(self, url):
+        """Get content."""
+
+        response = requests.get(url, auth=self._auth_fn(
+            self._username, self._password))
+        _LOGGING.debug('Response: %s', response.text)
+
+        if response.status_code != 200:
+            _LOGGING.error(
+                "%s: Error connecting to %s: status_code = %s",
+                self._host, self.motion_url, response.status_code)
+            raise Exception()
+        
+        return response.text
+
+    def post_isapi_data(self, url, data):
+        """Get content."""
+
+        headers = DEFAULT_HEADERS
+        headers['Content-Length'] = str(len(data))
+        headers['Host'] = self._host
+        response = requests.put(url, auth=self._auth_fn(
+            self._username, self._password), data=data, headers=headers)
+
+        if response.status_code != 200:
+            _LOGGING.error(
+                "%s: Error connecting to %s: status_code = %s",
+                self._host, self.motion_url, response.status_code)
+            raise Exception()
+
+        _LOGGING.debug('request.headers:')
+        _LOGGING.debug('%s', response.request.headers)
+        _LOGGING.debug('Response:')
+        _LOGGING.debug('%s', response.text)
+        
+        return response.text
+
+    def get_xml_tree(self, url):
+        return tree_no_ns_from_string(self.get_isapi_content(url))
+
     def get_version(self):
         """
         Returns the firmware version running on the camera
@@ -146,23 +199,13 @@ class CreateDevice:
         or if element_to_query is not None, the value of that element
         """
 
-        _LOGGING.info('url: %s', self.deviceinfo_url)
-
-        response = requests.get(
-            self.deviceinfo_url,
-            auth=self._auth_fn(self._username, self._password))
-
-        _LOGGING.debug('response: %s', response)
-        _LOGGING.debug("status_code %s", response.status_code)
-
-        if response.status_code != 200:
-            log_response_errors(response)
-            return None
+        text = self.get_isapi_content(self.deviceinfo_url)
 
         if element_to_query is None:
-            return response.text
+            return text
+        
         try:
-            tree = tree_no_ns_from_string(response.text)
+            tree = tree_no_ns_from_string(text)
 
             element_to_query = './/%s%s' % (
                 self._xml_namespace, element_to_query)
@@ -185,106 +228,114 @@ class CreateDevice:
             return None
         return None
 
+    def get_bool_value(self, tree, name):
+        element = tree.findall('.//%s%s' % (self._xml_namespace, name))
+        assert(len(element) == 1)
+        return element[0].text.strip().lower() == 'true'
+
+    def set_bool_value(self, tree, name, value: bool):
+        element = tree.findall('.//%s%s' % (self._xml_namespace, name))
+        assert(len(element) == 1)
+        element[0].text = str(value).lower()
+        return tree
+
+    def get_int_value(self, tree, name):
+        enabled_element = tree.findall('.//%s%s' % (self._xml_namespace, name))
+        assert(len(enabled_element) == 1)
+        return int(enabled_element[0].text.strip())
+
+    def set_int_value(self, tree, name, value: int):
+        enabled_element = tree.findall('.//%s%s' % (self._xml_namespace, name))
+        assert(len(enabled_element) == 1)
+        enabled_element[0].text = str(value)
+        return tree
+
     def is_motion_detection_enabled(self):
         """Get current state of Motion Detection.
 
         Returns False on error or if motion detection is off."""
 
-        response = requests.get(self.motion_url, auth=self._auth_fn(
-            self._username, self._password))
-        _LOGGING.debug('Response: %s', response.text)
-
-        if response.status_code != 200:
-            _LOGGING.error(
-                "%s: Error connecting to %s: status_code = %s",
-                self._host, self.motion_url, response.status_code)
-            return False
+        tree = self.get_xml_tree(self.motion_url)
 
         try:
+            enabled = self.get_bool_value(tree, 'enabled')
+            sensitivity_level = self.get_int_value(tree, 'sensitivityLevel')
+            
+            _LOGGING.info('%s motion detection state, enabled: %s', self._host, str(enabled))
 
-            tree = tree_no_ns_from_string(response.text)
-            enabled_element = tree.findall(
-                './/%senabled' % self._xml_namespace)
-            sensitivity_level_element = tree.findall(
-                './/%ssensitivityLevel' % self._xml_namespace)
-            if len(enabled_element) == 0:
-                _LOGGING.error("%s: Problem getting motion detection status",
-                               self._host)
-                return False
-            if len(sensitivity_level_element) == 0:
-                _LOGGING.error("%s: Problem getting sensitivityLevel status",
-                               self._host)
-                return False
-
-            result = enabled_element[0].text.strip()
-            _LOGGING.info(
-                '%s motion detection state, enabled: %s', self._host, result)
-
-            if int(sensitivity_level_element[0].text) == 0:
-                _LOGGING.warning(
-                    "%s sensitivityLevel is 0.", self._host)
-                sensitivity_level_element[0].text = str(
-                    self._sensitivity_level)
-                _LOGGING.info(
-                    "%s sensitivityLevel now set to %s",
-                    self._host, self._sensitivity_level)
-
-            if result == 'true':
-                # Save this for future switch off
-                self.xml_motion_detection_on = ElementTree.tostring(
-                    tree, encoding=XML_ENCODING)
-                enabled_element[0].text = 'false'
-                self.xml_motion_detection_off = ElementTree.tostring(
-                    tree, encoding=XML_ENCODING)
-                return True
-            # Save this for future switch on
-            self.xml_motion_detection_off = ElementTree.tostring(
-                tree, encoding=XML_ENCODING)
-            enabled_element[0].text = 'true'
-            self.xml_motion_detection_on = ElementTree.tostring(
-                tree, encoding=XML_ENCODING)
-            return False
-
+            return enabled
         except AttributeError as attib_err:
-            _LOGGING.error(
-                '%s: Problem parsing '
-                'camera motion detection state: %s', self._host, attib_err)
+            _LOGGING.error('%s: Problem parsing camera motion detection state: %s', self._host, attib_err)
             return False
 
-    def enable_motion_detection(self):
+    def is_channel_name_overlay_enabled(self):
+        """Get current state of Motion Detection.
+
+        Returns False on error or if motion detection is off."""
+
+        tree = self.get_xml_tree(self.channel_name_overlay_url)
+
+        try:
+            enabled = self.get_bool_value(tree, 'enabled')
+            
+            _LOGGING.info('%s enabled: %s', self._host, str(enabled))
+
+            return enabled
+        except AttributeError as attib_err:
+            _LOGGING.error('%s: Problem parsing camera motion detection state: %s', self._host, attib_err)
+            return False
+
+    def is_date_time_overlay_enabled(self):
+        """Get current state of Motion Detection.
+
+        Returns False on error or if motion detection is off."""
+        tree = self.get_xml_tree(self.date_time_overlay_url)
+
+        try:
+            enabled = self.get_bool_value(tree, 'enabled')
+            
+            _LOGGING.info('%s enabled: %s', self._host, str(enabled))
+
+            return enabled
+        except AttributeError as attib_err:
+            _LOGGING.error('%s: Problem parsing camera motion detection state: %s', self._host, attib_err)
+            return False
+
+    def set_motion_detection(self, value: bool):
         """ Enable Motion Detection """
 
-        self.put_motion_detection_xml(self.xml_motion_detection_on)
+        tree = self.get_xml_tree(self.motion_url)
+        tree = self.set_bool_value(tree, 'enabled', value)        
 
-    def disable_motion_detection(self):
-        """ Disable Motion Detection """
+        self.put_tree(self.motion_url, tree)
 
-        self.put_motion_detection_xml(self.xml_motion_detection_off)
+    def set_channel_name_overlay(self, value: bool):
+        """ Enable Motion Detection """
 
-    def put_motion_detection_xml(self, xml):
-        """ Put request with xml Motion Detection """
+        tree = self.get_xml_tree(self.channel_name_overlay_url)
+        tree = self.set_bool_value(tree, 'enabled', value)        
+
+        self.put_tree(self.channel_name_overlay_url, tree)
+
+    def set_date_time_overlay(self, value: bool):
+        """ Enable Motion Detection """
+
+        tree = self.get_xml_tree(self.date_time_overlay_url)
+        tree = self.set_bool_value(tree, 'enabled', value)        
+
+        self.put_tree(self.date_time_overlay_url, tree)
+
+    def put_tree(self, url, tree):
+        """ Put request with xml """
+        xml = ElementTree.tostring(tree, encoding=XML_ENCODING)
 
         _LOGGING.debug('xml:')
         _LOGGING.debug("%s", xml)
 
-        headers = DEFAULT_HEADERS
-        headers['Content-Length'] = str(len(xml))
-        headers['Host'] = self._host
-        response = requests.put(self.motion_url, auth=self._auth_fn(
-            self._username, self._password), data=xml, headers=headers)
-        _LOGGING.debug('request.headers:')
-        _LOGGING.debug('%s', response.request.headers)
-        _LOGGING.debug('Response:')
-        _LOGGING.debug('%s', response.text)
-
-        if response.status_code != 200:
-            _LOGGING.error(
-                "%s: Error connecting to %s: status_code = %s",
-                self._host, self.motion_url, response.status_code)
-            return
+        text = self.post_isapi_data(url, xml)
 
         try:
-            tree = tree_no_ns_from_string(response.text)
+            tree = tree_no_ns_from_string(text)
             enabled_element = tree.findall(
                 './/%sstatusString' % self._xml_namespace)
             if len(enabled_element) == 0:
