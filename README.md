@@ -4,6 +4,12 @@
 
 ![Pipeline](https://github.com/fbradyirl/hikvision/workflows/Python%20package/badge.svg)
 
+> [!IMPORTANT]  
+> This repository is only sporadically maintained.  Breaking API changes will be maintained on a best efforts basis.
+>
+> Collaborators are welcome, as are PRs for enhancements.
+>
+> Bug reports unrelated to API changes may not get the attention you want. 
 
 This is a very basic python module providing a basic python
 interface to interact with a Hikvision IP Camera
